@@ -4,3 +4,4 @@ We need to interact with this app in order to get datas.
 
     $ vagrant ssh --command boobank
 
+There is a scala project to handle events.
