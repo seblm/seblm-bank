@@ -24,7 +24,7 @@ object BalanceEachEvent extends App {
         })
         .toSeq
         .sortWith(chronologicalOrder)
-        .scanLeft(CumulativeBalance(Event(-1, account, LocalDate.parse("2017-03-26"), Libelle(""), Amount(0L)), Amount(0L))) { case ((CumulativeBalance(_, cumulative)), event) =>
+        .scanLeft(CumulativeBalance(Event(-1, account, LocalDate.parse("2017-03-26"), Amount(0L), Libelle("")), Amount(0L))) { case ((CumulativeBalance(_, cumulative)), event) =>
           CumulativeBalance(event, Amount(cumulative.value + event.amount.value))
         }
         .drop(1)

@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import scala.util.Try
 
-case class Event(id: Long, account: Account, date: LocalDate, libelle: Libelle, amount: Amount)
+case class Event(id: Long, account: Account, date: LocalDate, amount: Amount, libelle: Libelle)
 
 object Event {
 
@@ -13,10 +13,10 @@ object Event {
       id <- Try(tokens.head.toLong).toOption
       account <- Try(tokens(1)).toOption.flatMap(identifier => Accounts.account(identifier))
       date <- Try(LocalDate.parse(tokens(2))).toOption
-      libelle <- Try(tokens(3)).map(Libelle).toOption
-      amount <- Try(tokens(4).toLong).map(Amount).toOption
+      amount <- Try(tokens(3).toLong).map(Amount).toOption
+      libelle <- Try(tokens(4)).map(Libelle).toOption
     } yield {
-      Event(id, account, date, libelle, amount)
+      Event(id, account, date, amount, libelle)
     }
 
 }
