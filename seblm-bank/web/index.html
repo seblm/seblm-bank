@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <title>Balance cumulée</title>
+</head>
+<body>
+    <script src="/web/jquery-3.1.1.min.js"></script>
+    <script src="/web/highstock.js"></script>
+
+    <div id="container" style="height: 400px; min-width: 310px"></div>
+
+    <script>
+
+        $.getJSON('jsonp?callback=?', function (data) {
+            Highcharts.setOptions({
+                lang: {
+                    decimalPoint: ',',
+                    months: ["janvier" , "février" , "mars" , "avril" , "mai" , "juin" , "juillet" , "août" , "septembre" , "octobre" , "novembre" , "décembre"],
+                    rangeSelectorFrom: 'De',
+                    rangeSelectorTo: 'À',
+                    shortMonths: ["Jan" , "Fév" , "Mar" , "Avr" , "Mai" , "Jun" , "Jui" , "Aou" , "Sep" , "Oct" , "Nov" , "Déc"],
+                    weekdays: ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']
+                }
+            });
+            Highcharts.stockChart('container', {
+                rangeSelector: {
+                    selected: 1
+                },
+
+                title: {
+                    text: 'Balance cumulée'
+                },
+
+                plotOptions: {
+                    series: {
+                        tooltip: {
+                            dateTimeLabelFormats: {
+                                day:"%A %e %B %Y"
+                            },
+                            valueDecimals: 2,
+                            valueSuffix: '€'
+                        }
+                    }
+                },
+
+                series: [{
+                    name: 'Tous les comptes',
+                    data: data
+                }]
+            });
+        });
+
+    </script>
+</body>
+</html>
