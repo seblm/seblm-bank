@@ -12,7 +12,7 @@
 
     <script>
 
-        $.getJSON('jsonp?callback=?', function (data) {
+        $.getJSON('jsonp?callback=?', function (series) {
             Highcharts.setOptions({
                 lang: {
                     decimalPoint: ',',
@@ -44,10 +44,7 @@
                     }
                 },
 
-                series: [{
-                    name: 'Tous les comptes',
-                    data: data
-                }]
+                series: series
             });
         });
 

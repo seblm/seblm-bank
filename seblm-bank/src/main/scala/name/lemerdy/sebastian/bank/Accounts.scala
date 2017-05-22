@@ -8,4 +8,7 @@ object Accounts {
     case _ => None
   }
 
+  val accounts: Iterable[Account] = Iterable(
+    All)
+
 }

@@ -7,8 +7,6 @@ import name.lemerdy.sebastian.bank._
 
 object BalanceEachDay extends App {
 
-  case class CumulativeBalance(event: Event, cumulative: Amount)
-
   private val chronologicalOrder: (((LocalDate, Any), (LocalDate, Any)) => Boolean) = {
     case ((d1, _), (d2, _)) => d1.isBefore(d2)
   }

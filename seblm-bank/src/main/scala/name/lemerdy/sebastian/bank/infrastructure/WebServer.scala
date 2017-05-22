@@ -12,11 +12,11 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import name.lemerdy.sebastian.bank.Accounts.All
-import name.lemerdy.sebastian.bank.balance.BalanceEachDay.CumulativeBalance
-import name.lemerdy.sebastian.bank.{Amount, Event, Events, Libelle}
+import name.lemerdy.sebastian.bank.balance.CumulativeBalance
+import name.lemerdy.sebastian.bank._
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.io.{Source, StdIn}
+import scala.io.StdIn
 
 object WebServer extends App {
 
@@ -28,19 +28,30 @@ object WebServer extends App {
     case ((d1, _), (d2, _)) => d1.isBefore(d2)
   }
 
-  private def cumulativeBalanceAll(): String = {
+  private def cumulativeBalance(account: Account): String = {
     Events.events
-      .filter(event => !event.libelle.equals(Libelle("DEBIT CARTE BANCAIRE DIFFERE")))
+      .filter(event => if (account == All) !event.libelle.equals(Libelle("DEBIT CARTE BANCAIRE DIFFERE")) else account == event.account)
       .groupBy(_.date)
       .toSeq
       .sortWith(chronologicalOrder)
-      .scanLeft(CumulativeBalance(Event(-1, All, LocalDate.parse("2016-03-26"), Amount(0L), Libelle("")), Amount(0L))) { case ((CumulativeBalance(_, cumulative)), (date, eventsSameDate)) =>
+      .scanLeft(CumulativeBalance(Event(-1, account, LocalDate.parse("2016-03-26"), Amount(0L), Libelle("")), Amount(0L))) { case ((CumulativeBalance(_, cumulative)), (date, eventsSameDate)) =>
         val amountSameDay = eventsSameDate.map(_.amount.value).sum
-        CumulativeBalance(Event(0, All, date, Amount(amountSameDay), Libelle(eventsSameDate.map(_.libelle.firstLine).mkString(", "))), Amount(cumulative.value + amountSameDay))
+        CumulativeBalance(Event(0, account, date, Amount(amountSameDay), Libelle(eventsSameDate.map(_.libelle.firstLine).mkString(", "))), Amount(cumulative.value + amountSameDay))
       }
       .drop(1)
       .map(cumulativeBalance => s"[${cumulativeBalance.event.date.toEpochDay * 24 * 60 * 60 * 1000}, ${cumulativeBalance.cumulative.value / 100F}]")
       .mkString(", \n")
+  }
+
+  private def cumulativeBalances(): String = {
+    Accounts.accounts.map(account =>
+      s"""
+         |{
+         |  name: '${account.name}',
+         |  data: [${cumulativeBalance(account)}]
+         |}
+       """.stripMargin)
+    .mkString(", ")
   }
 
   val route: Route =
@@ -52,7 +63,7 @@ object WebServer extends App {
       path("jsonp") {
         parameter("callback") { callback =>
           get {
-            complete(HttpResponse(OK, entity = s"$callback([${cumulativeBalanceAll()}])"))
+            complete(HttpResponse(OK, entity = s"$callback([${cumulativeBalances()}])"))
           }
         }
       } ~ path(Remaining) { remainingPath =>
