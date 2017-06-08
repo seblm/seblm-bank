@@ -4,6 +4,6 @@ import name.lemerdy.sebastian.bank.{Amount, Events}
 
 object Balance extends App {
 
-  Events.events(events => println(s"balance = ${Amount(events.map(_.amount.value).sum)}"))
+  println(s"balance = ${Amount(Events.events.map(_.amount.value).sum)}")
 
 }

@@ -18,11 +18,15 @@ object WebServer extends HttpApp with App {
 
   private def cumulativeBalance(account: Account): String = {
     Events.events
-      .filter(event => if (account == All) !event.libelle.equals(Libelle("DEBIT CARTE BANCAIRE DIFFERE")) else account == event.account)
+      .filter(event => if (account.equals(All)) {
+        !event.libelle.equals(Libelle("DEBIT CARTE BANCAIRE DIFFERE"))
+      } else {
+        event.account.equals(account)
+      })
       .groupBy(_.date)
       .toSeq
       .sortWith(chronologicalOrder)
-      .scanLeft(CumulativeBalance(Event(-1, account, LocalDate.parse("2016-03-26"), Amount(0L), Libelle("")), Amount(0L))) { case ((CumulativeBalance(_, cumulative)), (date, eventsSameDate)) =>
+      .scanLeft(CumulativeBalance(Event(-1, account, LocalDate.parse("1970-01-01"), Amount(0L), Libelle("")), Amount(0L))) { case ((CumulativeBalance(_, cumulative)), (date, eventsSameDate)) =>
         val amountSameDay = eventsSameDate.map(_.amount.value).sum
         CumulativeBalance(Event(0, account, date, Amount(amountSameDay), Libelle(eventsSameDate.map(_.libelle.firstLine).mkString(", "))), Amount(cumulative.value + amountSameDay))
       }
