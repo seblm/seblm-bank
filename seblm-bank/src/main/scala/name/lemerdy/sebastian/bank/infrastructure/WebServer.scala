@@ -3,26 +3,14 @@ package name.lemerdy.sebastian.bank.infrastructure
 import java.nio.file.{Files, Paths}
 import java.time.LocalDate
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.model.StatusCodes.{NotFound, OK}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
-import akka.stream.ActorMaterializer
+import akka.http.scaladsl.server.{HttpApp, Route}
 import name.lemerdy.sebastian.bank.Accounts.All
-import name.lemerdy.sebastian.bank.balance.CumulativeBalance
 import name.lemerdy.sebastian.bank._
+import name.lemerdy.sebastian.bank.balance.CumulativeBalance
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.io.StdIn
-
-object WebServer extends App {
-
-  implicit val system: ActorSystem = ActorSystem("seblm-bank")
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
-  implicit val exectutionContext: ExecutionContext = system.dispatcher
+object WebServer extends HttpApp with App {
 
   private val chronologicalOrder: (((LocalDate, Any), (LocalDate, Any)) => Boolean) = {
     case ((d1, _), (d2, _)) => d1.isBefore(d2)
@@ -51,10 +39,10 @@ object WebServer extends App {
          |  data: [${cumulativeBalance(account)}]
          |}
        """.stripMargin)
-    .mkString(", ")
+      .mkString(", ")
   }
 
-  val route: Route =
+  protected override val routes: Route =
     pathSingleSlash {
       get {
         complete(HttpResponse(OK, entity = HttpEntity(ContentTypes.`text/html(UTF-8)`, Files.readAllBytes(Paths.get("web/index.html")))))
@@ -77,12 +65,6 @@ object WebServer extends App {
       }
     }
 
-  val bindingFuture: Future[ServerBinding] = Http().bindAndHandle(route, "localhost", 8080)
-
-  println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
-  StdIn.readLine()
-  bindingFuture
-    .flatMap(_.unbind())
-    .onComplete(_ => system.terminate())
+  startServer("localhost", 8080)
 
 }

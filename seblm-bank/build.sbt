@@ -8,8 +8,7 @@ lazy val root = (project in file(".")).
       version      := "0.1.0-SNAPSHOT"
     )),
     name := "seblm-bank",
-    libraryDependencies += `akka-actor`,
-    libraryDependencies += `akka-stream`,
     libraryDependencies += `akka-http`,
+    libraryDependencies += `akka-http-core`,
     libraryDependencies += scalaTest % Test
   )
