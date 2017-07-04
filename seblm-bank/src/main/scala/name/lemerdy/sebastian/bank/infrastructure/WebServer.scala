@@ -16,7 +16,7 @@ object WebServer extends HttpApp with App {
     case ((d1, _), (d2, _)) => d1.isBefore(d2)
   }
 
-  private def cumulativeBalance(account: Account): String = {
+  private def cumulativeBalance(account: Account): String =
     Events.events
       .filter(event => if (account.equals(All)) {
         !event.libelle.equals(Libelle("DEBIT CARTE BANCAIRE DIFFERE"))
@@ -33,7 +33,6 @@ object WebServer extends HttpApp with App {
       .drop(1)
       .map(cumulativeBalance => s"[${cumulativeBalance.event.date.toEpochDay * 24 * 60 * 60 * 1000}, ${cumulativeBalance.cumulative.value / 100F}]")
       .mkString(", \n")
-  }
 
   private def cumulativeBalances(): String = {
     Accounts.accounts.map(account =>
