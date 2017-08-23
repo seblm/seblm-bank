@@ -11,7 +11,7 @@ object BalanceEachDay extends App {
     case ((d1, _), (d2, _)) => d1.isBefore(d2)
   }
 
-  private def printCumulativeBalance(account: Account) = {
+  private def printCumulativeBalance(account: Account): Unit = {
     println("" +
       s"${account.name}\t${account.identifier}\n" +
       "date\tcumulative\tcurrent\tlibelle")
