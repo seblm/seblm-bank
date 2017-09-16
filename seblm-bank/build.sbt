@@ -4,11 +4,13 @@ lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
       organization := "name.lemerdy.sebastian",
-      scalaVersion := "2.12.3",
+      scalaVersion := "2.12.7",
       version      := "0.1.0-SNAPSHOT"
     )),
     name := "seblm-bank",
+    libraryDependencies += `akka-actor`,
     libraryDependencies += `akka-http`,
     libraryDependencies += `akka-http-core`,
+    libraryDependencies += `akka-stream`,
     libraryDependencies += scalaTest % Test
   )
