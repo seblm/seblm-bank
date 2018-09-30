@@ -9,9 +9,9 @@ object BalanceEachEvent extends App {
 
   private case class CumulativeBalance(event: Event, cumulative: Amount)
 
-  private val chronologicalOrder: ((Event, Event) => Boolean) = (e1, e2) => e1.date.isBefore(e2.date)
+  private val chronologicalOrder: (Event, Event) => Boolean = (e1, e2) => e1.date.isBefore(e2.date)
 
-  private def printCumulativeBalance(account: Account) = {
+  private def printCumulativeBalance(account: Account): Unit = {
     println("" +
       s"${account.name}\t${account.identifier}\n" +
       "date\tcumulative\tcurrent\tlibelle")
