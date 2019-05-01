@@ -13,16 +13,17 @@ object BalanceEachEvent extends App {
 
   private def printCumulativeBalance(account: Account): Unit = {
     println("" +
-      s"${account.name}\t${account.identifier}\n" +
+      s"${account.name}\t${account.identifiers}\n" +
       "date\tcumulative\tcurrent\tlibelle")
     Events.events
       .filter(event => if (account.equals(All)) {
-        !event.libelle.equals(Libelle("DEBIT CARTE BANCAIRE DIFFERE"))
+        !event.libelle.equals(Libelle("DEBIT CARTE BANCAIRE DIFFERE")) ||
+          !event.libelle.equals(Libelle("FRAISPAIEMENTCARTEINTERNATIO."))
       } else {
         event.account.equals(account)
       })
       .sortWith(chronologicalOrder)
-      .scanLeft(CumulativeBalance(Event(-1, account, LocalDate.parse("2017-03-26"), Amount(0L), Libelle("")), Amount(0L))) { case ((CumulativeBalance(_, cumulative)), event) =>
+      .scanLeft(CumulativeBalance(Event(-1, account, LocalDate.parse("2017-03-26"), Amount(0L), Libelle("")), Amount(0L))) { case (CumulativeBalance(_, cumulative), event) =>
         CumulativeBalance(event, Amount(cumulative.value + event.amount.value))
       }
       .drop(1)

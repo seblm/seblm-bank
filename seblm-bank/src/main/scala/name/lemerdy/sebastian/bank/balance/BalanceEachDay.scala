@@ -13,7 +13,7 @@ object BalanceEachDay extends App {
 
   private def printCumulativeBalance(account: Account): Unit = {
     println("" +
-      s"${account.name}\t${account.identifier}\n" +
+      s"${account.name}\t${account.identifiers}\n" +
       "date\tcumulative\tcurrent\tlibelle")
     println(Events.events
       .filter(event => if (account.equals(All)) {
