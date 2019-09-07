@@ -1,9 +1,8 @@
 package name.lemerdy.sebastian.bank.balance
 
-import java.time.LocalDate
-
 import name.lemerdy.sebastian.bank.Accounts._
 import name.lemerdy.sebastian.bank._
+import name.lemerdy.sebastian.bank.balance.Balance.START
 
 object BalanceEachEvent extends App {
 
@@ -11,25 +10,26 @@ object BalanceEachEvent extends App {
 
   private val chronologicalOrder: (Event, Event) => Boolean = (e1, e2) => e1.date.isBefore(e2.date)
 
-  private def printCumulativeBalance(account: Account): Unit = {
+  private def printCumulativeBalance(accounts: Accounts): Unit = {
     println("" +
-      s"${account.name}\t${account.identifiers}\n" +
+      s"${accounts.accounts.map(_.name).mkString(", ")}\t${accounts.accounts.flatMap(_.identifiers).mkString(", ")}\n" +
       "date\tcumulative\tcurrent\tlibelle")
-    Events.events
-      .filter(event => if (account.equals(All)) {
-        !event.libelle.equals(Libelle("DEBIT CARTE BANCAIRE DIFFERE")) ||
-          !event.libelle.equals(Libelle("FRAISPAIEMENTCARTEINTERNATIO."))
+    println(Events.events
+      .filter(event => if (accounts.equals(Joints)) {
+        !event.libelle.equals(Libelle("DEBIT CARTE BANCAIRE DIFFERE")) &&
+          !event.libelle.equals(Libelle("FRAISPAIEMENTCARTEINTERNATIO.")) && accounts.accounts.contains(event.account)
       } else {
-        event.account.equals(account)
+        accounts.accounts.contains(event.account)
       })
       .sortWith(chronologicalOrder)
-      .scanLeft(CumulativeBalance(Event(-1, account, LocalDate.parse("2017-03-26"), Amount(0L), Libelle("")), Amount(0L))) { case (CumulativeBalance(_, cumulative), event) =>
+      .scanLeft(CumulativeBalance(Event(-1, accounts.accounts.head, START, Amount(0L), Libelle("")), Amount(0L))) { case (CumulativeBalance(_, cumulative), event) =>
         CumulativeBalance(event, Amount(cumulative.value + event.amount.value))
       }
       .drop(1)
-      .foreach(cumulativeBalance => println(s"${cumulativeBalance.event.date}\t${cumulativeBalance.cumulative}\t${cumulativeBalance.event.amount}\t${cumulativeBalance.event.libelle.firstLine}"))
+      .map(cumulativeBalance => s"${cumulativeBalance.event.date}\t${cumulativeBalance.cumulative}\t${cumulativeBalance.event.amount}\t${cumulativeBalance.event.libelle.firstLine}")
+      .mkString("\n"))
   }
 
-  printCumulativeBalance(All)
+  printCumulativeBalance(Alls)
 
 }

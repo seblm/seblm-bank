@@ -1,14 +1,17 @@
 package name.lemerdy.sebastian.bank.infrastructure
 
 import java.nio.file.{Files, Paths}
-import java.time.LocalDate
+import java.time.{LocalDate, YearMonth}
 
-import akka.http.scaladsl.model.StatusCodes.{NotFound, OK}
+import akka.http.scaladsl.model.StatusCodes.{BadRequest, NotFound, OK}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server.{HttpApp, Route}
-import name.lemerdy.sebastian.bank.Accounts.All
+import name.lemerdy.sebastian.bank.Accounts.{All, Joints}
 import name.lemerdy.sebastian.bank._
-import name.lemerdy.sebastian.bank.balance.CumulativeBalance
+import name.lemerdy.sebastian.bank.balance.{BalanceEachDay, CumulativeBalance}
+import name.lemerdy.sebastian.bank.operations.{AccountsSelection, Operation, Operations}
+
+import scala.util.Try
 
 object WebServer extends HttpApp with App {
 
@@ -26,12 +29,12 @@ object WebServer extends HttpApp with App {
       .groupBy(_.date)
       .toSeq
       .sortWith(chronologicalOrder)
-      .scanLeft(CumulativeBalance(Event(-1, account, LocalDate.parse("1970-01-01"), Amount(0L), Libelle("")), Amount(0L))) { case (CumulativeBalance(_, cumulative), (date, eventsSameDate)) =>
+      .scanLeft(CumulativeBalance(LocalDate.parse("1970-01-01"), Amount(0L), Libelle(""), Amount(0L))) { case (CumulativeBalance(_, _, _, cumulative), (date, eventsSameDate)) =>
         val amountSameDay = eventsSameDate.map(_.amount.value).sum
-        CumulativeBalance(Event(0, account, date, Amount(amountSameDay), Libelle(eventsSameDate.map(_.libelle.firstLine).mkString(", "))), Amount(cumulative.value + amountSameDay))
+        CumulativeBalance(date, Amount(amountSameDay), Libelle(eventsSameDate.map(_.libelle.firstLine).mkString(", ")), Amount(cumulative.value + amountSameDay))
       }
       .drop(1)
-      .map(cumulativeBalance => s"[${cumulativeBalance.event.date.toEpochDay * 24 * 60 * 60 * 1000}, ${cumulativeBalance.cumulative.value / 100F}]")
+      .map(cumulativeBalance => s"[${cumulativeBalance.date.toEpochDay * 24 * 60 * 60 * 1000}, ${cumulativeBalance.cumulative.value / 100F}]")
       .mkString(", \n")
 
   private def cumulativeBalances(): String = {
@@ -45,6 +48,8 @@ object WebServer extends HttpApp with App {
       .mkString(", ")
   }
 
+  private def at(yearMonth: YearMonth)(operation: Operation): Boolean = operation.date.getYear == yearMonth.getYear && operation.date.getMonth == yearMonth.getMonth
+
   protected override val routes: Route =
     pathSingleSlash {
       get {
@@ -57,16 +62,40 @@ object WebServer extends HttpApp with App {
             complete(HttpResponse(OK, entity = s"$callback([${cumulativeBalances()}])"))
           }
         }
-      } ~ path(Remaining) { remainingPath =>
-      get {
-        val file = Paths.get(remainingPath)
-        if (file.toFile.exists()) {
-          complete(HttpResponse(OK, entity = Files.readAllBytes(file)))
-        } else {
-          complete(NotFound)
+      } ~
+      pathPrefix(Segment) { accountsSelectionFromPath =>
+        val accountsSelection = accountsSelectionFromPath match {
+          case "joint" => AccountsSelection.joint
+          case _ => AccountsSelection.joints
+        }
+        path("""\d{4}-\d{2}""".r) { yearMonth =>
+          extractLog { log =>
+            complete {
+              Try(YearMonth.parse(yearMonth))
+                .map { month =>
+                  val operations = Operations.from(Events.events, accountsSelection).filter(at(month))
+                  val labels = Seq.tabulate(month.lengthOfMonth() - 1)(day => month.atDay(day + 1))
+                  val cumulativeBalances: Seq[Amount] = BalanceEachDay.cumulativeBalances(Joints, month)
+                  HttpResponse(OK, entity = HttpEntity(ContentTypes.`text/html(UTF-8)`, html.monthly(month, operations, labels, cumulativeBalances).toString))
+                }
+                .fold(error => {
+                  log.error(error, "error")
+                  HttpResponse(BadRequest)
+                }, a => a)
+            }
+          }
+        }
+      } ~
+      path(Remaining) { remainingPath =>
+        get {
+          val file = Paths.get(remainingPath)
+          if (file.toFile.exists()) {
+            complete(HttpResponse(OK, entity = HttpEntity(ContentTypes.`text/html(UTF-8)`, Files.readAllBytes(file))))
+          } else {
+            complete(NotFound)
+          }
         }
       }
-    }
 
   startServer("localhost", 8080)
 

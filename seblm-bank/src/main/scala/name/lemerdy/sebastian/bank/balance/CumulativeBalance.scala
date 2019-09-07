@@ -1,5 +1,7 @@
 package name.lemerdy.sebastian.bank.balance
 
-import name.lemerdy.sebastian.bank.{Amount, Event}
+import java.time.LocalDate
 
-case class CumulativeBalance(event: Event, cumulative: Amount)
+import name.lemerdy.sebastian.bank.{Amount, Libelle}
+
+case class CumulativeBalance(date: LocalDate, amount: Amount, libelle: Libelle, cumulative: Amount)

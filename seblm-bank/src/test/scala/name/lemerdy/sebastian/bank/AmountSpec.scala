@@ -9,7 +9,7 @@ class AmountSpec extends FlatSpec with Matchers {
 
     val formattedAmount = amount.toString
 
-    formattedAmount should be("1\u00a0388,76 €")
+    formattedAmount should be("1\u00a0388,76\u00a0€")
   }
 
 }

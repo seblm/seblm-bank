@@ -1,40 +1,50 @@
 package name.lemerdy.sebastian.bank.balance
 
-import java.time.LocalDate
+import java.time.YearMonth
 
-import name.lemerdy.sebastian.bank.Accounts._
+import name.lemerdy.sebastian.bank.Accounts.All
+import name.lemerdy.sebastian.bank.balance.Balance.START
 import name.lemerdy.sebastian.bank._
 
 object BalanceEachDay extends App {
 
-  private val chronologicalOrder: ((LocalDate, Any), (LocalDate, Any)) => Boolean = {
-    case ((d1, _), (d2, _)) => d1.isBefore(d2)
+  def cumulativeBalances(accounts: Accounts, month: YearMonth): Seq[Amount] = {
+    val days = Seq.tabulate(month.lengthOfMonth() - 1)(day => month.atDay(day + 1))
+    val balances = cumulativeBalances(event => accounts.accounts.contains(event.account))
+    days.map { day =>
+      balances.find(_.date == day)
+        .orElse(balances.takeWhile(_.date.isBefore(day)).lastOption)
+        .map(_.cumulative)
+        .getOrElse(Amount(0L))
+    }
   }
+
+  private def cumulativeBalances(filter: Event => Boolean): Seq[CumulativeBalance] = Events.events
+    .filter(filter)
+    .groupBy(_.date)
+    .toSeq
+    .sortBy(_._1)(Ordering.by(_.toEpochDay))
+    .scanLeft(CumulativeBalance(START, Amount(0L), Libelle(""), Amount(0L))) { case (CumulativeBalance(_, _, _, cumulative), (date, eventsSameDate)) =>
+      val amountSameDay = eventsSameDate.map(_.amount.value).sum
+      CumulativeBalance(date, Amount(amountSameDay), Libelle(eventsSameDate.map(_.libelle.firstLine).mkString(", ")), Amount(cumulative.value + amountSameDay))
+    }
 
   private def printCumulativeBalance(account: Account): Unit = {
     println("" +
       s"${account.name}\t${account.identifiers}\n" +
       "date\tcumulative\tcurrent\tlibelle")
-    println(Events.events
-      .filter(event => if (account.equals(All)) {
-        !event.libelle.equals(Libelle("DEBIT CARTE BANCAIRE DIFFERE"))
-      } else {
-        event.account.equals(account)
-      })
-      .groupBy(_.date)
-      .toSeq
-      .sortWith(chronologicalOrder)
-      .scanLeft(CumulativeBalance(Event(-1, account, LocalDate.parse("2017-03-26"), Amount(0L), Libelle("")), Amount(0L))) { case (CumulativeBalance(_, cumulative), (date, eventsSameDate)) =>
-        val amountSameDay = eventsSameDate.map(_.amount.value).sum
-        CumulativeBalance(Event(0, account, date, Amount(amountSameDay), Libelle(eventsSameDate.map(_.libelle.firstLine).mkString(", "))), Amount(cumulative.value + amountSameDay))
-      }
+    println(cumulativeBalances(event => if (account.equals(All)) {
+      !event.libelle.equals(Libelle("DEBIT CARTE BANCAIRE DIFFERE"))
+    } else {
+      event.account.equals(account)
+    })
       .drop(1)
       .map(columns)
       .mkString("\n"))
   }
 
   private def columns(cumulativeBalance: CumulativeBalance): String =
-    s"${cumulativeBalance.event.date}\t${cumulativeBalance.cumulative}\t${cumulativeBalance.event.amount}\t${cumulativeBalance.event.libelle.firstLine}"
+    s"${cumulativeBalance.date}\t${cumulativeBalance.cumulative}\t${cumulativeBalance.amount}\t${cumulativeBalance.libelle.firstLine}"
 
   printCumulativeBalance(All)
 

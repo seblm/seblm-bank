@@ -1,0 +1,89 @@
+@import java.time.{LocalDate, YearMonth}
+@import java.time.format.DateTimeFormatter.ofPattern
+@import name.lemerdy.sebastian.bank.Amount
+@import name.lemerdy.sebastian.bank.balance.CumulativeBalance
+@import name.lemerdy.sebastian.bank.operations.Operation
+@(month: YearMonth, operations: Seq[Operation], labels: Seq[LocalDate], cumulativeBalances: Seq[Amount])<!doctype html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">
+        <title>@(month.format(ofPattern("MMM yyyy")))</title>
+        <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid lightgrey;
+        }
+
+        td {
+            /*white-space: nowrap;*/
+            vertical-align: top;
+        }
+
+        .monetary {
+            white-space: nowrap;
+            text-align: right;
+        }
+
+        .date {
+            white-space: nowrap;
+        }
+    </style>
+        <link href="/web/chartjs/Chart.min.css" rel="stylesheet"/>
+    </head>
+    <body>
+        <h1>@(month.format(ofPattern("MMM yyyy")))</h1>
+        <script src="/web/chartjs/Chart.min.js"></script>
+        <canvas id="myChart" width="400" height="100"></canvas>
+        <script>
+    var ctx = document.getElementById('myChart').getContext('2d');
+    var myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [@Html(labels.mkString("'", "', '", "'"))],
+            datasets: [{
+                label: 'solde',
+                data: [@Html(cumulativeBalances.map(_.value / 100).mkString(", "))],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    });
+</script>
+        <table>
+            <thead>
+                <tr>
+                    <th>date</th>
+                    <th>libellé</th>
+                    <th>montant</th>
+                    <th>solde</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for(operation <- operations) {<tr>
+                    <td class="date">@(operation.date)</td>
+                    <td>@Html(operation.label.valueSplitBy("<br>"))</td>
+                    <td class="monetary">@(operation.amount.stringValue)</td>
+                    <td class="monetary">@(operation.balance.stringValue)</td>
+                </tr>}
+            </tbody>
+        </table>
+    </body>
+</html>
