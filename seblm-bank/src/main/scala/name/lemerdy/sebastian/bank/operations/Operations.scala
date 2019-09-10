@@ -1,5 +1,7 @@
 package name.lemerdy.sebastian.bank.operations
 
+import java.time.YearMonth
+
 import name.lemerdy.sebastian.bank.balance.Balance
 import name.lemerdy.sebastian.bank.{Amount, Event, Events}
 
@@ -33,6 +35,16 @@ object Operations extends App {
         }
       }
       .reverse
+
+  def monthly(events: Seq[Event], accounts: AccountsSelection, month: YearMonth): Seq[Balance] = {
+    val operations = daily(events, accounts)
+    val initialBalance = operations.lastOption.map(_.oldBalance).getOrElse(Balance(0))
+    val days = Seq.tabulate(month.lengthOfMonth() - 1)(day => month.atDay(day + 1)).reverse
+    val amounts = days.map(day => operations.find(_.date == day).map(_.amount).getOrElse(Amount(0)))
+    amounts.reverse.scanLeft(initialBalance) {
+      case (balance, amount) => Balance(balance.value + amount.value)
+    }.tail.reverse
+  }
 
   println(Operations.from(Events.events, AccountsSelection.joint)
     .map(op =>
