@@ -14,10 +14,10 @@ class OperationsSpec extends FlatSpec {
       Operations.from(events, AccountsSelection(_.libelle != Libelle("credit card operations"), main, creditCard))
 
     operations should contain inOrderOnly(
-      Operation(LocalDate.parse("2019-03-01"), Libelle("initial balance"), Amount(125000), Balance(125000)),
-      Operation(LocalDate.parse("2019-03-02"), Libelle("shopping"), Amount(-1234), Balance(123766)),
-      Operation(LocalDate.parse("2019-03-02"), Libelle("flowers"), Amount(-4999), Balance(118767)),
       Operation(LocalDate.parse("2019-03-03"), Libelle("credit transfer"), Amount(-2000), Balance(116767)),
+      Operation(LocalDate.parse("2019-03-02"), Libelle("flowers"), Amount(-4999), Balance(118767)),
+      Operation(LocalDate.parse("2019-03-02"), Libelle("shopping"), Amount(-1234), Balance(123766)),
+      Operation(LocalDate.parse("2019-03-01"), Libelle("initial balance"), Amount(125000), Balance(125000)),
     )
   }
 
@@ -26,9 +26,9 @@ class OperationsSpec extends FlatSpec {
       Operations.daily(events, AccountsSelection(_.libelle != Libelle("credit card operations"), main, creditCard))
 
     operations should contain inOrderOnly(
-      DailyOperation(LocalDate.parse("2019-03-01"), Amount(125000), Balance(125000)),
-      DailyOperation(LocalDate.parse("2019-03-02"), Amount(-6233), Balance(118767)),
       DailyOperation(LocalDate.parse("2019-03-03"), Amount(-2000), Balance(116767)),
+      DailyOperation(LocalDate.parse("2019-03-02"), Amount(-6233), Balance(118767)),
+      DailyOperation(LocalDate.parse("2019-03-01"), Amount(125000), Balance(125000)),
     )
   }
 

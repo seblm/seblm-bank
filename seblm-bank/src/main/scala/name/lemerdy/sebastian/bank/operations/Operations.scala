@@ -18,6 +18,7 @@ object Operations extends App {
         val newBalance = Balance(oldBalance + event.amount.value)
         operations :+ Operation(event.date, event.libelle, event.amount, newBalance)
       }
+      .reverse
 
   def daily(events: Seq[Event], accounts: AccountsSelection): Seq[DailyOperation] =
     filter(events, accounts)
@@ -31,6 +32,7 @@ object Operations extends App {
             operations :+ DailyOperation(event.date, Amount(event.amount.value), newBalance)
         }
       }
+      .reverse
 
   println(Operations.from(Events.events, AccountsSelection.joint)
     .map(op =>
