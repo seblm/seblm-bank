@@ -23,17 +23,16 @@ object Operations extends App {
       .reverse
 
   def daily(events: Seq[Event], accounts: AccountsSelection): Seq[DailyOperation] =
-    filter(events, accounts)
-      .foldLeft(Seq.empty[DailyOperation]) { case (operations, event) =>
-        val oldBalance = operations.lastOption.map(_.balance.value).getOrElse(0L)
-        val newBalance = Balance(oldBalance + event.amount.value)
-        operations match {
-          case init :+ last if last.date == event.date =>
-            init :+ DailyOperation(event.date, Amount(last.amount.value + event.amount.value), newBalance)
-          case _ =>
-            operations :+ DailyOperation(event.date, Amount(event.amount.value), newBalance)
-        }
-      }
+    filter(events, accounts).foldLeft(Seq.empty[DailyOperation]) {
+      case (operations :+ last, event) =>
+        val newBalance = Balance(event.amount.value + last.balance.value)
+        if (last.date == event.date)
+          operations :+ DailyOperation(event.date, Amount(event.amount.value + last.amount.value), newBalance)
+        else
+          operations :+ last :+ DailyOperation(event.date, Amount(event.amount.value), newBalance)
+      case (Nil, event) =>
+        Nil :+ DailyOperation(event.date, Amount(event.amount.value), Balance(event.amount.value))
+    }
       .reverse
 
   def monthly(events: Seq[Event], accounts: AccountsSelection, month: YearMonth): Seq[Balance] = {
