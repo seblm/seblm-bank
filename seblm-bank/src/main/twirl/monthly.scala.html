@@ -1,9 +1,9 @@
 @import java.time.{LocalDate, YearMonth}
 @import java.time.format.DateTimeFormatter.ofPattern
 @import name.lemerdy.sebastian.bank.Amount
-@import name.lemerdy.sebastian.bank.balance.CumulativeBalance
+@import name.lemerdy.sebastian.bank.balance.Balance
 @import name.lemerdy.sebastian.bank.operations.Operation
-@(month: YearMonth, operations: Seq[Operation], labels: Seq[LocalDate], cumulativeBalances: Seq[Amount])<!doctype html>
+@(month: YearMonth, operations: Seq[Operation], labels: Seq[LocalDate], balances: Seq[Balance])<!doctype html>
 <html lang="fr">
     <head>
         <meta charset="UTF-8">
@@ -56,7 +56,7 @@
             labels: [@Html(labels.mkString("'", "', '", "'"))],
             datasets: [{
                 label: 'solde',
-                data: [@Html(cumulativeBalances.map(_.value / 100).mkString(", "))],
+                data: [@Html(balances.map(_.value / 100).mkString(", "))],
                 borderWidth: 1
             }]
         },

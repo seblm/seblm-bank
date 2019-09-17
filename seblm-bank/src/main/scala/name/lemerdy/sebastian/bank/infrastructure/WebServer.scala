@@ -8,7 +8,7 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse}
 import akka.http.scaladsl.server.{HttpApp, Route}
 import name.lemerdy.sebastian.bank.Accounts.{All, Joints}
 import name.lemerdy.sebastian.bank._
-import name.lemerdy.sebastian.bank.balance.{BalanceEachDay, CumulativeBalance}
+import name.lemerdy.sebastian.bank.balance.CumulativeBalance
 import name.lemerdy.sebastian.bank.operations.{AccountsSelection, Operations}
 
 import scala.util.Try
@@ -75,10 +75,9 @@ object WebServer extends HttpApp with App {
               Try(YearMonth.parse(yearMonth))
                 .map { month =>
                   val operations = Operations.from(Events.events, accountsSelection).filter(o => at(month)(o.date))
-                  val op1 = Operations.daily(Events.events, accountsSelection).filter(o => at(month)(o.date)) // TODO
-                  val labels = Seq.tabulate(month.lengthOfMonth() - 1)(day => month.atDay(day + 1))
-                  val cumulativeBalances: Seq[Amount] = BalanceEachDay.cumulativeBalances(Joints, month)
-                  HttpResponse(OK, entity = HttpEntity(ContentTypes.`text/html(UTF-8)`, html.monthly(month, operations, labels, cumulativeBalances).toString))
+                  val balances = Operations.monthly(Events.events, accountsSelection, month)
+                  val labels = Seq.iterate(month.atDay(1), month.lengthOfMonth())(day => day.plusDays(1))
+                  HttpResponse(OK, entity = HttpEntity(ContentTypes.`text/html(UTF-8)`, html.monthly(month, operations, labels, balances).toString))
                 }
                 .fold(error => {
                   log.error(error, "error")

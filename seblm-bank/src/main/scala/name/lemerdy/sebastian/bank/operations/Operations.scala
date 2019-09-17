@@ -36,9 +36,9 @@ object Operations extends App {
       .reverse
 
   def monthly(events: Seq[Event], accounts: AccountsSelection, month: YearMonth): Seq[Balance] = {
-    val operations = daily(events, accounts)
+    val operations = daily(events, accounts).filter(operation => YearMonth.from(operation.date) == month)
     val initialBalance = operations.lastOption.map(_.oldBalance).getOrElse(Balance(0))
-    val days = Seq.tabulate(month.lengthOfMonth() - 1)(day => month.atDay(day + 1)).reverse
+    val days = Seq.iterate(month.atDay(month.lengthOfMonth()), month.lengthOfMonth())(day => day.minusDays(1))
     val amounts = days.map(day => operations.find(_.date == day).map(_.amount).getOrElse(Amount(0)))
     amounts.reverse.scanLeft(initialBalance) {
       case (balance, amount) => Balance(balance.value + amount.value)

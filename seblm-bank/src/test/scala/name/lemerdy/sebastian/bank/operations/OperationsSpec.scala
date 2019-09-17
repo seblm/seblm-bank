@@ -18,7 +18,8 @@ class OperationsSpec extends FlatSpec {
       Operation(LocalDate.parse("2019-03-03"), Libelle("credit transfer"), Amount(-2000), Balance(116767)),
       Operation(LocalDate.parse("2019-03-02"), Libelle("flowers"), Amount(-4999), Balance(118767)),
       Operation(LocalDate.parse("2019-03-02"), Libelle("shopping"), Amount(-1234), Balance(123766)),
-      Operation(LocalDate.parse("2019-03-01"), Libelle("initial balance"), Amount(125000), Balance(125000)),
+      Operation(LocalDate.parse("2019-03-01"), Libelle("save up"), Amount(-5000), Balance(125000)),
+      Operation(LocalDate.parse("2019-02-28"), Libelle("initial balance"), Amount(130000), Balance(130000)),
     )
   }
 
@@ -30,7 +31,8 @@ class OperationsSpec extends FlatSpec {
       DailyOperation(LocalDate.parse("2019-03-10"), Amount(-8250), Balance(108517)),
       DailyOperation(LocalDate.parse("2019-03-03"), Amount(-2000), Balance(116767)),
       DailyOperation(LocalDate.parse("2019-03-02"), Amount(-6233), Balance(118767)),
-      DailyOperation(LocalDate.parse("2019-03-01"), Amount(125000), Balance(125000)),
+      DailyOperation(LocalDate.parse("2019-03-01"), Amount(-5000), Balance(125000)),
+      DailyOperation(LocalDate.parse("2019-02-28"), Amount(130000), Balance(130000)),
     )
   }
 
@@ -39,6 +41,7 @@ class OperationsSpec extends FlatSpec {
       Operations.monthly(events, AccountsSelection(_.libelle != Libelle("credit card operations"), main, creditCard), YearMonth.of(2019, 3))
 
     operations.reverse.zipWithIndex.map { case (balance, day) => (balance, day + 1) }.reverse should contain inOrderOnly(
+      (Balance(108517), /* 2019-03- */ 31),
       (Balance(108517), /* 2019-03- */ 30),
       (Balance(108517), /* 2019-03- */ 29),
       (Balance(108517), /* 2019-03- */ 28),
@@ -77,13 +80,15 @@ class OperationsSpec extends FlatSpec {
     val mainAccoun: Account = Account("main       ", "0002")
     val creditCard: Account = Account("credit card", "0003")
     val events: Seq[Event] = Seq(
-      Event(1L, savingsAcc, LocalDate.parse("2019-03-01"), Amount(298469), Libelle("initial balance")),
-      Event(2L, mainAccoun, LocalDate.parse("2019-03-01"), Amount(125000), Libelle("initial balance")),
-      Event(3L, mainAccoun, LocalDate.parse("2019-03-03"), Amount(-2000), Libelle("credit transfer")),
-      Event(4L, mainAccoun, LocalDate.parse("2019-03-20"), Amount(-14483), Libelle("credit card operations")),
-      Event(5L, creditCard, LocalDate.parse("2019-03-02"), Amount(-1234), Libelle("shopping")),
-      Event(6L, creditCard, LocalDate.parse("2019-03-02"), Amount(-4999), Libelle("flowers")),
-      Event(7L, creditCard, LocalDate.parse("2019-03-10"), Amount(-8250), Libelle("sneakers")),
+      Event(1L, savingsAcc, LocalDate.parse("2019-02-26"), Amount(293469), Libelle("initial balance")),
+      Event(2L, savingsAcc, LocalDate.parse("2019-03-01"), Amount(5000), Libelle("save up")),
+      Event(3L, mainAccoun, LocalDate.parse("2019-02-28"), Amount(130000), Libelle("initial balance")),
+      Event(4L, mainAccoun, LocalDate.parse("2019-03-01"), Amount(-5000), Libelle("save up")),
+      Event(5L, mainAccoun, LocalDate.parse("2019-03-03"), Amount(-2000), Libelle("credit transfer")),
+      Event(6L, mainAccoun, LocalDate.parse("2019-03-20"), Amount(-14483), Libelle("credit card operations")),
+      Event(7L, creditCard, LocalDate.parse("2019-03-02"), Amount(-1234), Libelle("shopping")),
+      Event(8L, creditCard, LocalDate.parse("2019-03-02"), Amount(-4999), Libelle("flowers")),
+      Event(9L, creditCard, LocalDate.parse("2019-03-10"), Amount(-8250), Libelle("sneakers")),
     )
 
     testCode(mainAccoun, creditCard, events)
