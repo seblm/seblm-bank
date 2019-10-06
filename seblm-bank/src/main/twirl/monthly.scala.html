@@ -29,7 +29,6 @@
         }
 
         td {
-            /*white-space: nowrap;*/
             vertical-align: top;
         }
 
@@ -45,7 +44,11 @@
         <link href="/web/chartjs/Chart.min.css" rel="stylesheet"/>
     </head>
     <body>
-        <h1>@(month.format(ofPattern("MMM yyyy")))</h1>
+        <h1>
+            <a href="@month.minusMonths(1).toString">&lt;</a>
+            @(month.format(ofPattern("MMM yyyy")))
+            <a href="@month.plusMonths(1).toString">&gt;</a>
+        </h1>
         <script src="/web/chartjs/Chart.min.js"></script>
         <canvas id="myChart" width="400" height="100"></canvas>
         <script>
